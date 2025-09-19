@@ -6,9 +6,16 @@ class SymptomManager extends ChangeNotifier {
   final List<String> _frequentSymptoms = ['두통', '복통', '피로', '어지러움'];
   final List<String> _medications = ['타이레놀', '게보린', '소화제'];
   final Map<String, Map<String, bool>> _medicationHistory = {};
+  final Map<String, dynamic> _diaryEntries = {};
 
   SymptomManager() {
-    _loadMedications();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    await _loadMedications();
+    await _loadMedicationHistory();
+    await _loadDiaryEntries();
   }
 
   // 자주 발생하는 증상
@@ -59,6 +66,19 @@ class SymptomManager extends ChangeNotifier {
     _saveMedicationHistory();
   }
 
+  // 건강 일기 기록
+  Map<String, dynamic> get diaryEntries => _diaryEntries;
+
+  void saveDiaryEntry(DateTime date, String status, List<String> symptoms) {
+    final key = _formatDate(date);
+    _diaryEntries[key] = {
+      'status': status,
+      'symptoms': symptoms,
+    };
+    notifyListeners();
+    _saveDiaryEntries();
+  }
+
   // 데이터 저장 및 불러오기
   Future<void> _loadMedications() async {
     final prefs = await SharedPreferences.getInstance();
@@ -68,7 +88,10 @@ class SymptomManager extends ChangeNotifier {
       final List<dynamic> list = jsonDecode(medsJson);
       _medications.addAll(list.cast<String>());
     }
+  }
 
+  Future<void> _loadMedicationHistory() async {
+    final prefs = await SharedPreferences.getInstance();
     final historyJson = prefs.getString('medication_history');
     if (historyJson != null) {
       final Map<String, dynamic> historyMap = jsonDecode(historyJson);
@@ -77,7 +100,16 @@ class SymptomManager extends ChangeNotifier {
         _medicationHistory[key] = Map<String, bool>.from(value);
       });
     }
-    notifyListeners();
+  }
+
+  Future<void> _loadDiaryEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final diaryJson = prefs.getString('diary_entries');
+    if (diaryJson != null) {
+      final Map<String, dynamic> diaryMap = jsonDecode(diaryJson);
+      _diaryEntries.clear();
+      _diaryEntries.addAll(diaryMap);
+    }
   }
 
   Future<void> _saveMedications() async {
@@ -88,6 +120,11 @@ class SymptomManager extends ChangeNotifier {
   Future<void> _saveMedicationHistory() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('medication_history', jsonEncode(_medicationHistory));
+  }
+  
+  Future<void> _saveDiaryEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('diary_entries', jsonEncode(_diaryEntries));
   }
   
   String _formatDate(DateTime date) {

@@ -12,7 +12,7 @@ class MedicationManagerDrawer extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('복용 중인 약물 관리'),
+        title: const Text('복용 중인 약 관리'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -22,7 +22,7 @@ class MedicationManagerDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '복용 중인 약물',
+                  '복용 중인 약',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -36,7 +36,7 @@ class MedicationManagerDrawer extends StatelessWidget {
                         onDeleted: () {
                           symptomManager.removeMedication(medication);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('$medication 약물이 삭제되었습니다.')),
+                            SnackBar(content: Text('$medication 약이 삭제되었습니다.')),
                           );
                         },
                       );
@@ -57,7 +57,7 @@ class MedicationManagerDrawer extends StatelessWidget {
   }
 
   void _addMedication(BuildContext context, SymptomManager manager) {
-    _showAddDialog(context, '약물 추가', (text) => manager.addMedication(text));
+    _showAddDialog(context, '약 추가', (text) => manager.addMedication(text));
   }
 
   void _showAddDialog(BuildContext context, String title, Function(String) onSave) {

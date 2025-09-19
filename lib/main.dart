@@ -8,8 +8,11 @@ import 'package:solusmvp/screens/solution_screen.dart';
 import 'package:solusmvp/screens/medication_screen.dart';
 import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 import 'package:solusmvp/widgets/medication_manager_drawer.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ko_KR', null);
   runApp(
     ChangeNotifierProvider(
       create: (context) => SymptomManager(),
@@ -136,7 +139,7 @@ class _TabScreenState extends State<TabScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.medication),
-              title: const Text('복용 중인 약물 관리'), // 새로운 메뉴 항목
+              title: const Text('복용 중인 약물 관리'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
