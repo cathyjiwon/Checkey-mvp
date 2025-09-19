@@ -6,12 +6,13 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 
 class SymptomManager with ChangeNotifier {
-  List<String> _frequentSymptoms = [];
+  List<dynamic> _frequentSymptoms = [];
   List<dynamic> _medications = [];
   Map<String, dynamic> _medicationHistory = {};
 
-  List<String> get frequentSymptoms => _frequentSymptoms;
+  List<dynamic> get frequentSymptoms => _frequentSymptoms;
   List<dynamic> get medications => _medications;
+  Map<String, dynamic> get medicationHistory => _medicationHistory;
 
   SymptomManager() {
     _loadAllData();
@@ -32,7 +33,13 @@ class SymptomManager with ChangeNotifier {
     
     final historyString = prefs.getString('medication_history');
     if (historyString != null) {
-      _medicationHistory = Map<String, dynamic>.from(json.decode(historyString));
+      final decodedHistory = json.decode(historyString);
+      if (decodedHistory is Map) {
+        _medicationHistory = decodedHistory.map((key, value) {
+          final historyMap = Map<String, bool>.from(value);
+          return MapEntry(key, historyMap);
+        });
+      }
     }
 
     notifyListeners();
@@ -41,7 +48,7 @@ class SymptomManager with ChangeNotifier {
   Future<void> _saveAllData() async {
     final prefs = await SharedPreferences.getInstance();
     
-    await prefs.setStringList('frequent_symptoms', _frequentSymptoms);
+    await prefs.setStringList('frequent_symptoms', List<String>.from(_frequentSymptoms));
     await prefs.setString('medications', json.encode(_medications));
     await prefs.setString('medication_history', json.encode(_medicationHistory));
   }
