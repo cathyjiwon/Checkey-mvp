@@ -7,6 +7,7 @@ import 'package:solusmvp/screens/statistics_screen.dart';
 import 'package:solusmvp/screens/solution_screen.dart';
 import 'package:solusmvp/screens/medication_screen.dart';
 import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
+import 'package:solusmvp/widgets/medication_manager_drawer.dart';
 
 void main() {
   runApp(
@@ -133,6 +134,17 @@ class _TabScreenState extends State<TabScreen> {
               },
             ),
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.medication),
+              title: const Text('복용 중인 약물 관리'), // 새로운 메뉴 항목
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MedicationManagerDrawer()),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.sick_outlined),
               title: const Text('자주 발생하는 증상 관리'),
