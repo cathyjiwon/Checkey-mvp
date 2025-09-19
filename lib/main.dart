@@ -10,15 +10,19 @@ import 'package:solusmvp/screens/solution_screen.dart';
 import 'package:solusmvp/screens/medication_screen.dart';
 import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 import 'package:solusmvp/widgets/medication_manager_drawer.dart';
+import 'package:solusmvp/services/diary_manager.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR', null);
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => SymptomManager(),
-      child: const MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => SymptomManager()),
+        ChangeNotifierProvider(create: (context) => DiaryManager()),
+      ],
+      child: const MyApp(), // MyApp이 MultiProvider의 자식이어야 합니다.
     ),
   );
 }

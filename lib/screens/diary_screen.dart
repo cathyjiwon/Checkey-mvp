@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
+import 'package:solusmvp/services/diary_manager.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_card.dart';
@@ -28,19 +29,19 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   void _loadDiaryEntryForSelectedDay() {
-    final symptomManager = Provider.of<SymptomManager>(context, listen: false);
+    final diaryManager = Provider.of<DiaryManager>(context, listen: false);
     final selectedDateString = DateFormat('yyyy-MM-dd').format(_selectedDay);
-    final entry = symptomManager.diaryEntries[selectedDateString];
+    final entry = diaryManager.diaryEntries[selectedDateString];
     setState(() {
       _selectedState = entry != null ? entry['status'] : '이상 없음';
     });
   }
 
   List<String> _getEventsForDay(DateTime day) {
-    final symptomManager = Provider.of<SymptomManager>(context, listen: false);
+    final diaryManager = Provider.of<DiaryManager>(context, listen: false);
     final dayString = DateFormat('yyyy-MM-dd').format(day);
-    if (symptomManager.diaryEntries.containsKey(dayString)) {
-      return [symptomManager.diaryEntries[dayString]['status']];
+    if (diaryManager.diaryEntries.containsKey(dayString)) {
+      return [diaryManager.diaryEntries[dayString]['status']];
     }
     return [];
   }
@@ -48,6 +49,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   @override
   Widget build(BuildContext context) {
     final symptomManager = Provider.of<SymptomManager>(context);
+    final diaryManager = Provider.of<DiaryManager>(context);
 
     return SingleChildScrollView(
       child: Padding(
@@ -84,14 +86,19 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     shape: BoxShape.circle,
                   ),
                 ),
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
-                ),
                 eventLoader: (day) => _getEventsForDay(day),
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
                     if (events.isNotEmpty) {
+                      final status = events.first;
+                      Color markerColor = Colors.grey;
+
+                      if (status == '이상 없음') {
+                        markerColor = Colors.green;
+                      } else if (status == '이상 있음') {
+                        markerColor = Colors.red;
+                      }
+
                       return Positioned(
                         right: 1,
                         bottom: 1,
@@ -99,7 +106,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                           width: 16.0,
                           height: 16.0,
                           decoration: BoxDecoration(
-                            color: events.first == '이상 없음' ? Colors.green : Colors.red,
+                            color: markerColor,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -139,7 +146,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (symptomManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)]?['status'] == '이상 있음')
+                  Text(
+                    '오늘의 건강 상태: ${_selectedState}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (_selectedState == '이상 있음')
                     Column(
                       children: [
                         const Text(
@@ -154,7 +169,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                           spacing: 8.0,
                           runSpacing: 8.0,
                           children: [
-                            ...symptomManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)]?['symptoms']
+                            ...diaryManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)]?['symptoms']
                                 .map<Widget>((symptom) => Chip(label: Text(symptom)))
                                 .toList() ?? [],
                           ],
@@ -183,14 +198,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       ),
       onPressed: () {
-        final symptomManager = Provider.of<SymptomManager>(context, listen: false);
         if (state == '이상 있음') {
-          _showSymptomInputModal(context, symptomManager);
+          _showSymptomInputModal(context, '이상 있음');
         } else {
-          symptomManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
-          _loadDiaryEntryForSelectedDay(); // 상태 업데이트
+          final diaryManager = Provider.of<DiaryManager>(context, listen: false);
+          diaryManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
+          _loadDiaryEntryForSelectedDay();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
+            const SnackBar(content: Text('저장 되었습니다.')),
           );
         }
       },
@@ -198,11 +213,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
-  void _showSymptomInputModal(BuildContext context, SymptomManager symptomManager) {
+  void _showSymptomInputModal(BuildContext context, String status) {
     final TextEditingController symptomController = TextEditingController();
-    List<String> selectedSymptoms = symptomManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)]?['symptoms']
-        .cast<String>()
-        .toList() ?? [];
+    List<String> selectedSymptoms = [];
+    final hasSelectedFrequentSymptom = ValueNotifier<bool>(false);
 
     showModalBottomSheet(
       context: context,
@@ -220,6 +234,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
           ),
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter modalSetState) {
+              final symptomManager = Provider.of<SymptomManager>(context, listen: false);
+              final diaryManager = Provider.of<DiaryManager>(context, listen: false);
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,33 +262,48 @@ class _DiaryScreenState extends State<DiaryScreen> {
                             } else {
                               selectedSymptoms.remove(symptom);
                             }
+                            hasSelectedFrequentSymptom.value = selectedSymptoms.isNotEmpty;
                           });
                         },
                       );
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  TextField(
-                    controller: symptomController,
-                    decoration: const InputDecoration(
-                      labelText: '다른 증상이 있다면 입력하세요.',
-                      border: OutlineInputBorder(),
-                    ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: hasSelectedFrequentSymptom,
+                    builder: (context, hasSelection, child) {
+                      return TextField(
+                        controller: symptomController,
+                        decoration: InputDecoration(
+                          labelText: hasSelection ? '자세한 증상을 입력하세요.' : '다른 증상이 있다면 입력하세요.',
+                          border: const OutlineInputBorder(),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
-                      if (symptomController.text.isNotEmpty) {
-                        selectedSymptoms.add(symptomController.text);
+                      List<String> symptomsToSave = [];
+                      if (hasSelectedFrequentSymptom.value) {
+                        String combinedSymptoms = selectedSymptoms.join(", ");
+                        if (symptomController.text.isNotEmpty) {
+                          symptomsToSave.add('$combinedSymptoms (${symptomController.text})');
+                        } else {
+                          symptomsToSave.add(combinedSymptoms);
+                        }
+                      } else {
+                        if (symptomController.text.isNotEmpty) {
+                          symptomsToSave.add(symptomController.text);
+                        }
                       }
-                      
-                      symptomManager.saveDiaryEntry(_selectedDay, _selectedState, selectedSymptoms);
+
+                      diaryManager.saveDiaryEntry(_selectedDay, status, symptomsToSave);
                           
                       Navigator.pop(context);
-                      _loadDiaryEntryForSelectedDay();
                       
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
+                        const SnackBar(content: Text('저장 되었습니다.')),
                       );
                     },
                     style: ElevatedButton.styleFrom(
