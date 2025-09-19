@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/symptom_manager.dart';
 import '../widgets/custom_card.dart';
 
-class SymptomAndMedicationScreen extends StatelessWidget {
-  const SymptomAndMedicationScreen({super.key});
+class MedicationScreen extends StatelessWidget {
+  const MedicationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,38 +16,6 @@ class SymptomAndMedicationScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CustomCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '자주 발생하는 증상',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: [
-                      ...symptomManager.frequentSymptoms.map((symptom) {
-                        return Chip(
-                          label: Text(symptom),
-                          onDeleted: () {
-                            symptomManager.removeFrequentSymptom(symptom);
-                          },
-                        );
-                      }).toList(),
-                      ActionChip(
-                        avatar: const Icon(Icons.add),
-                        label: const Text('새로운 증상 추가'),
-                        onPressed: () => _addSymptom(context, symptomManager),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
             CustomCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,10 +51,6 @@ class SymptomAndMedicationScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _addSymptom(BuildContext context, SymptomManager manager) {
-    _showAddDialog(context, '증상 추가', (text) => manager.addFrequentSymptom(text));
   }
 
   void _addMedication(BuildContext context, SymptomManager manager) {

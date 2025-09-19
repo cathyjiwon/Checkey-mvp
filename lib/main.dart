@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:solusmvp/services/symptom_manager.dart';
 import 'package:solusmvp/screens/diary_screen.dart';
 import 'package:solusmvp/screens/home_screen.dart';
-import 'package:solusmvp/screens/solution_screen.dart';
 import 'package:solusmvp/screens/statistics_screen.dart';
-import 'package:solusmvp/screens/symptom_and_medication_screen.dart';
-import 'package:solusmvp/services/symptom_manager.dart';
+import 'package:solusmvp/screens/solution_screen.dart';
+import 'package:solusmvp/screens/medication_screen.dart';
+import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 
 void main() {
   runApp(
@@ -52,7 +53,7 @@ class _TabScreenState extends State<TabScreen> {
 
   static const List<Widget> _tabScreens = <Widget>[
     HomeScreen(),
-    SymptomAndMedicationScreen(),
+    MedicationScreen(),
     DiaryScreen(),
     StatisticsScreen(),
     SolutionScreen(),
@@ -79,7 +80,7 @@ class _TabScreenState extends State<TabScreen> {
                 color: Colors.green,
               ),
               child: Text(
-                '탭 메뉴',
+                '메뉴',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -96,8 +97,8 @@ class _TabScreenState extends State<TabScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.medical_services),
-              title: const Text('증상 및 약물'),
+              leading: const Icon(Icons.medication),
+              title: const Text('약 복용'),
               selected: _selectedIndex == 1,
               onTap: () {
                 _onItemTapped(1);
@@ -131,6 +132,18 @@ class _TabScreenState extends State<TabScreen> {
                 Navigator.pop(context);
               },
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.sick_outlined),
+              title: const Text('자주 발생하는 증상 관리'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FrequentSymptomDrawer()),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -142,8 +155,8 @@ class _TabScreenState extends State<TabScreen> {
             label: '홈',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.medical_services),
-            label: '증상',
+            icon: Icon(Icons.medication),
+            label: '약 복용',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
