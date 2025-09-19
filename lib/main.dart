@@ -1,3 +1,5 @@
+// main.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
@@ -40,22 +42,22 @@ class MyApp extends StatelessWidget {
           titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ),
-      home: const TabScreen(),
+      home: const MainScreen(),
     );
   }
 }
 
-class TabScreen extends StatefulWidget {
-  const TabScreen({super.key});
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<TabScreen> createState() => _TabScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _TabScreenState extends State<TabScreen> {
+class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _tabScreens = <Widget>[
+  static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     MedicationScreen(),
     DiaryScreen(),
@@ -139,7 +141,7 @@ class _TabScreenState extends State<TabScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.medication),
-              title: const Text('복용 중인 약물 관리'),
+              title: const Text('복용 중인 약 관리'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -162,7 +164,7 @@ class _TabScreenState extends State<TabScreen> {
           ],
         ),
       ),
-      body: _tabScreens.elementAt(_selectedIndex),
+      body: _widgetOptions[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

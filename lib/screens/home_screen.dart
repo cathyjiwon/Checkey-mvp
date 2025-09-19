@@ -22,7 +22,10 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      DefaultTabController.of(context).animateTo(1);
+                      final TabController? tabController = DefaultTabController.of(context);
+                      if (tabController != null) {
+                        tabController.animateTo(1);
+                      }
                     },
                     child: const Text('바로가기'),
                   ),
@@ -40,7 +43,10 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      DefaultTabController.of(context).animateTo(2);
+                      final TabController? tabController = DefaultTabController.of(context);
+                      if (tabController != null) {
+                        tabController.animateTo(2);
+                      }
                     },
                     child: const Text('바로가기'),
                   ),
@@ -58,7 +64,10 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      DefaultTabController.of(context).animateTo(3);
+                      final TabController? tabController = DefaultTabController.of(context);
+                      if (tabController != null) {
+                        tabController.animateTo(3);
+                      }
                     },
                     child: const Text('바로가기'),
                   ),
@@ -76,7 +85,10 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      DefaultTabController.of(context).animateTo(4);
+                      final TabController? tabController = DefaultTabController.of(context);
+                      if (tabController != null) {
+                        tabController.animateTo(4);
+                      }
                     },
                     child: const Text('바로가기'),
                   ),

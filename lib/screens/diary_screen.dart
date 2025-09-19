@@ -1,3 +1,5 @@
+// lib/screens/diary_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
@@ -20,7 +22,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDiaryEntryForSelectedDay();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDiaryEntryForSelectedDay();
+    });
   }
 
   void _loadDiaryEntryForSelectedDay() {
@@ -32,7 +36,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
     });
   }
 
-  // 캘린더에 표시할 이벤트를 반환하는 함수
   List<String> _getEventsForDay(DateTime day) {
     final symptomManager = Provider.of<SymptomManager>(context, listen: false);
     final dayString = DateFormat('yyyy-MM-dd').format(day);
@@ -136,7 +139,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (_selectedState != '이상 없음')
+                  if (symptomManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)]?['status'] == '이상 있음')
                     Column(
                       children: [
                         const Text(
@@ -180,16 +183,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       ),
       onPressed: () {
-        setState(() {
-          _selectedState = state;
-        });
         final symptomManager = Provider.of<SymptomManager>(context, listen: false);
         if (state == '이상 있음') {
           _showSymptomInputModal(context, symptomManager);
         } else {
           symptomManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
+          _loadDiaryEntryForSelectedDay(); // 상태 업데이트
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('건강 일기가 기록되었습니다.')),
+            const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
           );
         }
       },
@@ -267,11 +268,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       
                       symptomManager.saveDiaryEntry(_selectedDay, _selectedState, selectedSymptoms);
                           
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('건강 일기가 기록되었습니다.')),
-                      );
-
                       Navigator.pop(context);
+                      _loadDiaryEntryForSelectedDay();
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,

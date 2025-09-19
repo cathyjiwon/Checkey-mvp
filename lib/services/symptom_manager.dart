@@ -1,21 +1,25 @@
+// lib/services/symptom_manager.dart
+
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SymptomManager extends ChangeNotifier {
-  final List<String> _frequentSymptoms = ['두통', '복통', '피로', '어지러움'];
-  final List<String> _medications = ['타이레놀', '게보린', '소화제'];
-  final Map<String, Map<String, bool>> _medicationHistory = {};
-  final Map<String, dynamic> _diaryEntries = {};
+  List<String> _frequentSymptoms = [];
+  List<String> _medications = [];
+  Map<String, Map<String, bool>> _medicationHistory = {};
+  Map<String, dynamic> _diaryEntries = {};
 
   SymptomManager() {
     _loadAllData();
   }
 
   Future<void> _loadAllData() async {
+    await _loadFrequentSymptoms();
     await _loadMedications();
     await _loadMedicationHistory();
     await _loadDiaryEntries();
+    notifyListeners();
   }
 
   // 자주 발생하는 증상
@@ -25,12 +29,14 @@ class SymptomManager extends ChangeNotifier {
     if (!_frequentSymptoms.contains(symptom)) {
       _frequentSymptoms.add(symptom);
       notifyListeners();
+      _saveFrequentSymptoms();
     }
   }
 
   void removeFrequentSymptom(String symptom) {
     _frequentSymptoms.remove(symptom);
     notifyListeners();
+    _saveFrequentSymptoms();
   }
 
   // 복용 중인 약물
@@ -80,35 +86,38 @@ class SymptomManager extends ChangeNotifier {
   }
 
   // 데이터 저장 및 불러오기
+  Future<void> _loadFrequentSymptoms() async {
+    final prefs = await SharedPreferences.getInstance();
+    final symptomsJson = prefs.getString('frequent_symptoms');
+    if (symptomsJson != null) {
+      try {
+        final List<dynamic> list = jsonDecode(symptomsJson);
+        _frequentSymptoms = list.cast<String>().toList();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to load frequent symptoms: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _saveFrequentSymptoms() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('frequent_symptoms', jsonEncode(_frequentSymptoms));
+  }
+  
   Future<void> _loadMedications() async {
     final prefs = await SharedPreferences.getInstance();
     final medsJson = prefs.getString('medications');
     if (medsJson != null) {
-      _medications.clear();
-      final List<dynamic> list = jsonDecode(medsJson);
-      _medications.addAll(list.cast<String>());
-    }
-  }
-
-  Future<void> _loadMedicationHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final historyJson = prefs.getString('medication_history');
-    if (historyJson != null) {
-      final Map<String, dynamic> historyMap = jsonDecode(historyJson);
-      _medicationHistory.clear();
-      historyMap.forEach((key, value) {
-        _medicationHistory[key] = Map<String, bool>.from(value);
-      });
-    }
-  }
-
-  Future<void> _loadDiaryEntries() async {
-    final prefs = await SharedPreferences.getInstance();
-    final diaryJson = prefs.getString('diary_entries');
-    if (diaryJson != null) {
-      final Map<String, dynamic> diaryMap = jsonDecode(diaryJson);
-      _diaryEntries.clear();
-      _diaryEntries.addAll(diaryMap);
+      try {
+        final List<dynamic> list = jsonDecode(medsJson);
+        _medications = list.cast<String>().toList();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to load medications: $e');
+        }
+      }
     }
   }
 
@@ -117,11 +126,48 @@ class SymptomManager extends ChangeNotifier {
     prefs.setString('medications', jsonEncode(_medications));
   }
   
+  Future<void> _loadMedicationHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyJson = prefs.getString('medication_history');
+    if (historyJson != null) {
+      try {
+        final Map<String, dynamic> historyMap = jsonDecode(historyJson);
+        _medicationHistory.clear();
+        historyMap.forEach((key, value) {
+          if (value is Map) {
+            _medicationHistory[key] = Map<String, bool>.from(value.cast<String, bool>());
+          }
+        });
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to load medication history: $e');
+        }
+        _medicationHistory = {};
+      }
+    }
+  }
+
   Future<void> _saveMedicationHistory() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('medication_history', jsonEncode(_medicationHistory));
   }
   
+  Future<void> _loadDiaryEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final diaryJson = prefs.getString('diary_entries');
+    if (diaryJson != null) {
+      try {
+        final Map<String, dynamic> diaryMap = jsonDecode(diaryJson);
+        _diaryEntries = Map<String, dynamic>.from(diaryMap);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to load diary entries: $e');
+        }
+        _diaryEntries = {};
+      }
+    }
+  }
+
   Future<void> _saveDiaryEntries() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('diary_entries', jsonEncode(_diaryEntries));
