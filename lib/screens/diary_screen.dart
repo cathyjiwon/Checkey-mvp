@@ -32,6 +32,16 @@ class _DiaryScreenState extends State<DiaryScreen> {
     });
   }
 
+  // 캘린더에 표시할 이벤트를 반환하는 함수
+  List<String> _getEventsForDay(DateTime day) {
+    final symptomManager = Provider.of<SymptomManager>(context, listen: false);
+    final dayString = DateFormat('yyyy-MM-dd').format(day);
+    if (symptomManager.diaryEntries.containsKey(dayString)) {
+      return [symptomManager.diaryEntries[dayString]['status']];
+    }
+    return [];
+  }
+
   @override
   Widget build(BuildContext context) {
     final symptomManager = Provider.of<SymptomManager>(context);
@@ -74,6 +84,26 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 headerStyle: const HeaderStyle(
                   formatButtonVisible: false,
                   titleCentered: true,
+                ),
+                eventLoader: (day) => _getEventsForDay(day),
+                calendarBuilders: CalendarBuilders(
+                  markerBuilder: (context, date, events) {
+                    if (events.isNotEmpty) {
+                      return Positioned(
+                        right: 1,
+                        bottom: 1,
+                        child: Container(
+                          width: 16.0,
+                          height: 16.0,
+                          decoration: BoxDecoration(
+                            color: events.first == '이상 없음' ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    }
+                    return null;
+                  },
                 ),
               ),
             ),
@@ -138,11 +168,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   Widget _buildStateButton(String state, BuildContext context) {
-    final bool isSelected = _selectedState == state;
+    final buttonColor = state == '이상 없음' ? Colors.green : Colors.red;
+
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.green : Colors.grey[200],
-        foregroundColor: isSelected ? Colors.white : Colors.black,
+        backgroundColor: buttonColor,
+        foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
