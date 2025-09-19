@@ -1,5 +1,3 @@
-// lib/screens/diary_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
@@ -18,7 +16,7 @@ class DiaryScreen extends StatefulWidget {
 class _DiaryScreenState extends State<DiaryScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
-  String _selectedState = '이상 없음';
+  String? _selectedState; // null로 초기화
 
   @override
   void initState() {
@@ -33,7 +31,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final selectedDateString = DateFormat('yyyy-MM-dd').format(_selectedDay);
     final entry = diaryManager.diaryEntries[selectedDateString];
     setState(() {
-      _selectedState = entry != null ? entry['status'] : '이상 없음';
+      _selectedState = entry?['status'];
     });
   }
 
@@ -99,17 +97,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         markerColor = Colors.red;
                       }
 
-                      return Positioned(
-                        right: 1,
-                        bottom: 1,
-                        child: Container(
-                          width: 16.0,
-                          height: 16.0,
-                          decoration: BoxDecoration(
-                            color: markerColor,
-                            shape: BoxShape.circle,
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: 8.0,
+                            height: 8.0,
+                            decoration: BoxDecoration(
+                              color: markerColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
+                        ],
                       );
                     }
                     return null;
@@ -146,13 +145,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    '오늘의 건강 상태: ${_selectedState}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  if (_selectedState != null) // null이 아닐 때만 텍스트 표시
+                    Text(
+                      '오늘의 건강 상태: ${_selectedState!}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 10),
                   if (_selectedState == '이상 있음')
                     Column(
@@ -205,7 +205,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
           diaryManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
           _loadDiaryEntryForSelectedDay();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('저장 되었습니다.')),
+            const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
           );
         }
       },
@@ -303,7 +303,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       Navigator.pop(context);
                       
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('저장 되었습니다.')),
+                        const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
                       );
                     },
                     style: ElevatedButton.styleFrom(
