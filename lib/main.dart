@@ -73,6 +73,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: _widgetOptions.length, vsync: this);
+    _tabController.addListener(() {
+      setState(() {}); // TabController의 인덱스가 변경될 때마다 rebuild
+    });
   }
 
   @override
