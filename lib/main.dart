@@ -1,5 +1,3 @@
-// main.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
@@ -11,6 +9,7 @@ import 'package:solusmvp/screens/medication_screen.dart';
 import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 import 'package:solusmvp/widgets/medication_manager_drawer.dart';
 import 'package:solusmvp/services/diary_manager.dart';
+import 'package:solusmvp/services/medication_manager.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
@@ -21,8 +20,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => SymptomManager()),
         ChangeNotifierProvider(create: (context) => DiaryManager()),
+        ChangeNotifierProvider(create: (context) => MedicationManager()),
       ],
-      child: const MyApp(), // MyApp이 MultiProvider의 자식이어야 합니다.
+      child: const MyApp(),
     ),
   );
 }
@@ -58,8 +58,8 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
@@ -69,133 +69,149 @@ class _MainScreenState extends State<MainScreen> {
     SolutionScreen(),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _widgetOptions.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Solus MVP'),
-      ),
-      endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.green,
-              ),
-              child: Text(
-                '메뉴',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+    return DefaultTabController(
+      length: _widgetOptions.length,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Solus MVP'),
+        ),
+        endDrawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                ),
+                child: Text(
+                  '메뉴',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                  ),
                 ),
               ),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('홈'),
+                selected: _tabController.index == 0,
+                onTap: () {
+                  _tabController.animateTo(0);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.medication),
+                title: const Text('약 복용'),
+                selected: _tabController.index == 1,
+                onTap: () {
+                  _tabController.animateTo(1);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today),
+                title: const Text('건강 일기'),
+                selected: _tabController.index == 2,
+                onTap: () {
+                  _tabController.animateTo(2);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.bar_chart),
+                title: const Text('통계'),
+                selected: _tabController.index == 3,
+                onTap: () {
+                  _tabController.animateTo(3);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.lightbulb),
+                title: const Text('솔루션'),
+                selected: _tabController.index == 4,
+                onTap: () {
+                  _tabController.animateTo(4);
+                  Navigator.pop(context);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.medication),
+                title: const Text('복용 중인 약 관리'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MedicationManagerDrawer()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.sick_outlined),
+                title: const Text('자주 발생하는 증상 관리'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FrequentSymptomDrawer()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: _tabController,
+          children: _widgetOptions,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: '홈',
             ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('홈'),
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _onItemTapped(0);
-                Navigator.pop(context);
-              },
+            BottomNavigationBarItem(
+              icon: Icon(Icons.medication),
+              label: '약 복용',
             ),
-            ListTile(
-              leading: const Icon(Icons.medication),
-              title: const Text('약 복용'),
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _onItemTapped(1);
-                Navigator.pop(context);
-              },
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today),
+              label: '일기',
             ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: const Text('건강 일기'),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                _onItemTapped(2);
-                Navigator.pop(context);
-              },
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: '통계',
             ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart),
-              title: const Text('통계'),
-              selected: _selectedIndex == 3,
-              onTap: () {
-                _onItemTapped(3);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.lightbulb),
-              title: const Text('솔루션'),
-              selected: _selectedIndex == 4,
-              onTap: () {
-                _onItemTapped(4);
-                Navigator.pop(context);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.medication),
-              title: const Text('복용 중인 약 관리'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MedicationManagerDrawer()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.sick_outlined),
-              title: const Text('자주 발생하는 증상 관리'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FrequentSymptomDrawer()),
-                );
-              },
+            BottomNavigationBarItem(
+              icon: Icon(Icons.lightbulb),
+              label: '솔루션',
             ),
           ],
+          currentIndex: _tabController.index,
+          selectedItemColor: Colors.green,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) {
+            _tabController.animateTo(index);
+          },
         ),
-      ),
-      body: _widgetOptions[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '홈',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.medication),
-            label: '약 복용',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: '일기',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: '통계',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.lightbulb),
-            label: '솔루션',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
       ),
     );
   }

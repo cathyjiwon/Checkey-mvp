@@ -2,14 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:solusmvp/services/symptom_manager.dart';
+import 'package:solusmvp/services/medication_manager.dart'; // SymptomManager 대신 MedicationManager 임포트
 
 class MedicationManagerDrawer extends StatelessWidget {
   const MedicationManagerDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final symptomManager = Provider.of<SymptomManager>(context);
+    // MedicationManager를 Provider로 사용
+    final medicationManager = Provider.of<MedicationManager>(context);
 
     return Drawer(
       child: SingleChildScrollView(
@@ -55,21 +56,21 @@ class MedicationManagerDrawer extends StatelessWidget {
                         spacing: 8.0,
                         runSpacing: 8.0,
                         children: [
-                          ...symptomManager.medications.asMap().entries.map((entry) {
+                          ...medicationManager.medications.asMap().entries.map((entry) {
                             final index = entry.key;
                             final medication = entry.value;
                             return Chip(
                               label: Text(medication['name']),
                               onDeleted: () {
-                                symptomManager.removeMedication(index);
+                                medicationManager.removeMedication(index);
                               },
                             );
-                          }).toList(),
+                          }),
                           ActionChip(
                             avatar: const Icon(Icons.add),
                             label: const Text('새로운 약 추가'),
                             onPressed: () {
-                              _showAddMedicationDialog(context, symptomManager);
+                              _showAddMedicationDialog(context, medicationManager);
                             },
                           ),
                         ],
@@ -86,7 +87,7 @@ class MedicationManagerDrawer extends StatelessWidget {
   }
 
   // 새로운 약을 추가하는 다이얼로그
-  void _showAddMedicationDialog(BuildContext context, SymptomManager symptomManager) {
+  void _showAddMedicationDialog(BuildContext context, MedicationManager medicationManager) {
     final TextEditingController controller = TextEditingController();
     showDialog(
       context: context,
@@ -107,7 +108,7 @@ class MedicationManagerDrawer extends StatelessWidget {
             TextButton(
               onPressed: () {
                 if (controller.text.isNotEmpty) {
-                  symptomManager.addMedication({'name': controller.text});
+                  medicationManager.addMedication({'name': controller.text});
                   Navigator.of(context).pop();
                 }
               },
