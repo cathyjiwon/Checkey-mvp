@@ -6,8 +6,8 @@ import 'package:solusmvp/services/symptom_manager.dart';
 import 'package:solusmvp/services/diary_manager.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import '../widgets/custom_card.dart';
-import '../widgets/frequent_symptom_drawer.dart'; // 새로운 import
+import 'package:solusmvp/widgets/custom_card.dart';
+import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -57,7 +57,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // '증상 추가' 바로가기 버튼 추가
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -235,7 +234,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   void _showSymptomInputModal(BuildContext context, String status) {
     final TextEditingController symptomController = TextEditingController();
     List<String> selectedSymptoms = [];
-    final hasSelectedFrequentSymptom = ValueNotifier<bool>(false);
+    final ValueNotifier<bool> hasSelectedFrequentSymptom = ValueNotifier<bool>(false);
 
     showModalBottomSheet(
       context: context,
@@ -253,8 +252,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
           ),
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter modalSetState) {
-              final symptomManager = Provider.of<SymptomManager>(context, listen: false);
+              final symptomManager = Provider.of<SymptomManager>(context);
               final diaryManager = Provider.of<DiaryManager>(context, listen: false);
+
+              // 텍스트 필드의 라벨 텍스트를 결정
+              String labelText = hasSelectedFrequentSymptom.value
+                  ? '자세한 증상을 입력하세요.'
+                  : '다른 증상이 있다면 입력하세요.';
+              
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,35 +293,27 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: hasSelectedFrequentSymptom,
-                    builder: (context, hasSelection, child) {
-                      return TextField(
-                        controller: symptomController,
-                        decoration: InputDecoration(
-                          labelText: hasSelection ? '자세한 증상을 입력하세요.' : '다른 증상이 있다면 입력하세요.',
-                          border: const OutlineInputBorder(),
-                        ),
-                      );
+                  TextField(
+                    controller: symptomController,
+                    decoration: InputDecoration(
+                      labelText: labelText,
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (text) {
+                      // 사용자가 타이핑을 시작하면 '자세한 증상을 입력하세요.'로 변경
+                      modalSetState(() {
+                        hasSelectedFrequentSymptom.value = text.isNotEmpty || selectedSymptoms.isNotEmpty;
+                      });
                     },
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
-                      List<String> symptomsToSave = [];
-                      if (hasSelectedFrequentSymptom.value) {
-                        String combinedSymptoms = selectedSymptoms.join(", ");
-                        if (symptomController.text.isNotEmpty) {
-                          symptomsToSave.add('$combinedSymptoms (${symptomController.text})');
-                        } else {
-                          symptomsToSave.add(combinedSymptoms);
-                        }
-                      } else {
-                        if (symptomController.text.isNotEmpty) {
-                          symptomsToSave.add(symptomController.text);
-                        }
+                      List<String> symptomsToSave = [...selectedSymptoms];
+                      if (symptomController.text.isNotEmpty) {
+                        symptomsToSave.add(symptomController.text);
                       }
-
+                      
                       diaryManager.saveDiaryEntry(_selectedDay, status, symptomsToSave);
                       
                       Navigator.pop(context);
