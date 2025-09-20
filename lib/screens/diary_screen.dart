@@ -92,6 +92,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
               Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 elevation: 4,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20.0),
                 ),
@@ -205,6 +206,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
               Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 elevation: 4,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20.0),
                 ),
@@ -214,7 +216,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('yyyy년 M월 d일').format(_selectedDay),
+                        '📅 ${DateFormat('yyyy년 M월 d일').format(_selectedDay)}',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -261,15 +263,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
     Color endColor;
     Color textColor;
     IconData icon;
+    String emoji;
 
     if (state == '이상 없음') {
       startColor = Colors.green.shade400;
       endColor = Colors.green.shade600;
       icon = Icons.check_circle_outline;
+      emoji = '😊';
     } else {
       startColor = Colors.red.shade400;
       endColor = Colors.red.shade600;
       icon = Icons.error_outline;
+      emoji = '🤒';
     }
 
     if (isSelected) {
@@ -317,7 +322,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: textColor),
+                Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 30),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   state,
@@ -344,104 +352,108 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final otherSymptoms = entry['otherSymptoms'] as List<dynamic>?;
     final customSymptom = entry['customSymptom'] as String?;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Card(
+      elevation: 2,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '오늘의 건강 상태: ',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            Row(
+              children: [
+                Text(
+                  status == '이상 없음' ? '✅' : '🚨',
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${DateFormat('MM월 d일').format(_selectedDay)} 기록',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                ),
+              ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: status == '이상 없음' ? Colors.green.shade100 : Colors.red.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                status,
+            const Divider(height: 24),
+            if (status == '이상 있음') ...[
+              if (frequentSymptoms != null && frequentSymptoms.isNotEmpty) ...[
+                const Text(
+                  '자주 나타나는 증상:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: frequentSymptoms.map<Widget>((symptom) => Chip(
+                    label: Text(symptom),
+                    backgroundColor: Colors.grey.shade200,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (otherSymptoms != null && otherSymptoms.isNotEmpty) ...[
+                const Text(
+                  '기록된 증상:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: otherSymptoms.map<Widget>((symptom) => Chip(
+                    label: Text(symptom),
+                    backgroundColor: Colors.grey.shade200,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (customSymptom != null && customSymptom.isNotEmpty) ...[
+                const Text(
+                  '자세한 증상:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '✍️ $customSymptom',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ] else if (status == '이상 없음') ...[
+              const Text(
+                '👍 오늘 건강 상태에 이상이 없었습니다.',
                 style: TextStyle(
-                  color: status == '이상 없음' ? Colors.green.shade800 : Colors.red.shade800,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
+            ],
           ],
         ),
-        if (status == '이상 있음') ...[
-          // 자주 나타나는 증상
-          if (frequentSymptoms != null && frequentSymptoms.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              '자주 나타나는 증상:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: frequentSymptoms.map<Widget>((symptom) => Chip(
-                label: Text(symptom),
-                backgroundColor: Colors.grey.shade200,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-              )).toList(),
-            ),
-          ],
-
-          // 다른 증상 (직접 입력 후 칩으로 저장된 경우)
-          if (otherSymptoms != null && otherSymptoms.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              '기록된 증상:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: otherSymptoms.map<Widget>((symptom) => Chip(
-                label: Text(symptom),
-                backgroundColor: Colors.grey.shade200,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-              )).toList(),
-            ),
-          ],
-
-          // 자세한 증상 (자주 나타나는 증상 선택 후 입력된 경우)
-          if (customSymptom != null && customSymptom.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              '자세한 증상:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              customSymptom,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ],
-      ],
+      ),
     );
   }
 
