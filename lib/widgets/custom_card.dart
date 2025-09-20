@@ -9,9 +9,9 @@ class CustomCard extends StatelessWidget {
   const CustomCard({
     super.key,
     required this.child,
-    this.elevation = 1.0,
-    this.padding = const EdgeInsets.all(16.0),
-    this.margin = const EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
+    this.elevation = 2.0, // 토스 앱처럼 은은한 그림자를 위해 elevation을 2.0으로 높임
+    this.padding = const EdgeInsets.all(20.0), // 내부 여백을 넓혀 깔끔한 느낌 강조
+    this.margin = const EdgeInsets.symmetric(vertical: 10.0), // 위아래 간격을 넓게 설정
   });
 
   @override
@@ -20,7 +20,7 @@ class CustomCard extends StatelessWidget {
       elevation: elevation,
       margin: margin,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(20.0), // 더 부드러운 모서리를 위해 값을 20.0으로 변경
       ),
       child: Padding(
         padding: padding,
