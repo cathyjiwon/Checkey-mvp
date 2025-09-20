@@ -28,13 +28,21 @@ class DiaryManager with ChangeNotifier {
     await prefs.setString('diary_entries', json.encode(_diaryEntries));
   }
 
-  void saveDiaryEntry(DateTime date, String status, List<String> symptoms) {
-    final dateString = DateFormat('yyyy-MM-dd').format(date);
-    _diaryEntries[dateString] = {
+  void saveDiaryEntry(
+    DateTime day,
+    String status,
+    List<String> frequentSymptoms, {
+    String customSymptom = '',
+    List<String> otherSymptoms = const [],
+  }) {
+    final dayString = DateFormat('yyyy-MM-dd').format(day);
+    _diaryEntries[dayString] = {
       'status': status,
-      'symptoms': symptoms,
+      'frequentSymptoms': frequentSymptoms, // 자주 나타나는 증상 (선택된 칩)
+      'customSymptom': customSymptom, // 자세한 증상 (텍스트)
+      'otherSymptoms': otherSymptoms, // 다른 증상 (입력된 칩)
     };
-    _saveDiaryEntries();
     notifyListeners();
+    _saveDiaryEntries();
   }
 }
