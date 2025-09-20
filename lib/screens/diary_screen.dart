@@ -1,3 +1,5 @@
+// lib/screens/diary_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
@@ -5,6 +7,7 @@ import 'package:solusmvp/services/diary_manager.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_card.dart';
+import '../widgets/frequent_symptom_drawer.dart'; // 새로운 import
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -16,7 +19,7 @@ class DiaryScreen extends StatefulWidget {
 class _DiaryScreenState extends State<DiaryScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
-  String? _selectedState; // null로 초기화
+  String? _selectedState;
 
   @override
   void initState() {
@@ -54,6 +57,22 @@ class _DiaryScreenState extends State<DiaryScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // '증상 추가' 바로가기 버튼 추가
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const FrequentSymptomDrawer()),
+                    );
+                  },
+                  child: const Text('증상 추가', textAlign: TextAlign.center),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
             CustomCard(
               child: TableCalendar(
                 locale: 'ko_KR',
@@ -145,7 +164,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (_selectedState != null) // null이 아닐 때만 텍스트 표시
+                  if (_selectedState != null)
                     Text(
                       '오늘의 건강 상태: ${_selectedState!}',
                       style: const TextStyle(
@@ -299,7 +318,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       }
 
                       diaryManager.saveDiaryEntry(_selectedDay, status, symptomsToSave);
-                          
+                      
                       Navigator.pop(context);
                       
                       ScaffoldMessenger.of(context).showSnackBar(

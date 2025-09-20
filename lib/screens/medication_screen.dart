@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/symptom_manager.dart';
 import 'package:solusmvp/services/medication_manager.dart';
-import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 import 'package:solusmvp/widgets/medication_manager_drawer.dart';
 
 class MedicationScreen extends StatefulWidget {
@@ -27,30 +26,17 @@ class _MedicationScreenState extends State<MedicationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 바로가기 버튼 섹션
+                // '약 관리' 바로가기 버튼 섹션
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const FrequentSymptomDrawer()),
-                          );
-                        },
-                        child: const Text('증상 추가', textAlign: TextAlign.center),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const MedicationManagerDrawer()),
-                          );
-                        },
-                        child: const Text('약 추가', textAlign: TextAlign.center),
-                      ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const MedicationManagerDrawer()),
+                        );
+                      },
+                      child: const Text('약 관리', textAlign: TextAlign.center),
                     ),
                   ],
                 ),
