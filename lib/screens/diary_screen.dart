@@ -222,49 +222,66 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
   Widget _buildStateButton(String state, BuildContext context) {
     final isSelected = _selectedState == state;
-    final buttonColor = isSelected ? (state == '이상 없음' ? Colors.green.shade600 : Colors.red.shade600) : Colors.grey.shade200;
-    final textColor = isSelected ? Colors.white : Colors.black87;
+    final bool isNotSelected = _selectedState != null && !isSelected;
+
+    Color buttonColor;
+    Color textColor;
+
+    if (_selectedState == null) {
+        // 아무것도 선택되지 않았을 때
+        buttonColor = (state == '이상 없음' ? Colors.green.shade600 : Colors.red.shade600);
+        textColor = Colors.white;
+    } else {
+        // 선택된 상태
+        if (isSelected) {
+            buttonColor = (state == '이상 없음' ? Colors.green.shade600 : Colors.red.shade600);
+            textColor = Colors.white;
+        } else {
+            buttonColor = Colors.grey.shade200;
+            textColor = Colors.black87;
+        }
+    }
 
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: Material(
-          color: buttonColor,
-          borderRadius: BorderRadius.circular(12.0),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12.0),
-            onTap: () {
-              setState(() {
-                _selectedState = state;
-              });
-              if (state == '이상 있음') {
-                _showSymptomInputModal(context, '이상 있음');
-              } else {
-                final diaryManager = Provider.of<DiaryManager>(context, listen: false);
-                diaryManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
-                _loadDiaryEntryForSelectedDay();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
-                );
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              alignment: Alignment.center,
-              child: Text(
-                state,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+        child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Material(
+                color: buttonColor,
+                borderRadius: BorderRadius.circular(12.0),
+                child: InkWell(
+                    borderRadius: BorderRadius.circular(12.0),
+                    onTap: () {
+                        setState(() {
+                            _selectedState = state;
+                        });
+                        if (state == '이상 있음') {
+                            _showSymptomInputModal(context, '이상 있음');
+                        } else {
+                            final diaryManager = Provider.of<DiaryManager>(context, listen: false);
+                            diaryManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
+                            _loadDiaryEntryForSelectedDay();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
+                            );
+                        }
+                    },
+                    child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        alignment: Alignment.center,
+                        child: Text(
+                            state,
+                            style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                            ),
+                        ),
+                    ),
                 ),
-              ),
             ),
-          ),
         ),
-      ),
     );
-  }
+}
 
   void _showSymptomInputModal(BuildContext context, String status) {
     final TextEditingController symptomController = TextEditingController();
