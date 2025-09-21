@@ -68,9 +68,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         MaterialPageRoute(builder: (context) => const FrequentSymptomDrawer()),
                       );
                     },
-                    icon: const Icon(Icons.add, size: 20),
+                    icon: const Icon(
+                      Icons.healing, // 반창고 아이콘으로 변경
+                      size: 20,
+                      color: Colors.green, // 초록색으로 변경
+                    ),
                     label: const Text(
-                      '증상 추가',
+                      '증상 관리',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
