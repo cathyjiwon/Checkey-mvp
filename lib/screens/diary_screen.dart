@@ -1,12 +1,10 @@
 // lib/screens/diary_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:solusmvp/services/symptom_manager.dart';
 import 'package:solusmvp/services/diary_manager.dart';
+import 'package:solusmvp/widgets/symptom_input_modal.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:solusmvp/widgets/custom_card.dart';
 import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 
 class DiaryScreen extends StatefulWidget {
@@ -42,14 +40,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final diaryManager = Provider.of<DiaryManager>(context, listen: false);
     final dayString = DateFormat('yyyy-MM-dd').format(day);
     if (diaryManager.diaryEntries.containsKey(dayString)) {
-      return [diaryManager.diaryEntries[dayString]['status']];
+      final status = diaryManager.diaryEntries[dayString]?['status'];
+      return status != null ? [status] : [];
     }
     return [];
   }
 
   @override
   Widget build(BuildContext context) {
-    final symptomManager = Provider.of<SymptomManager>(context);
     final diaryManager = Provider.of<DiaryManager>(context);
 
     return Scaffold(
@@ -69,9 +67,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       );
                     },
                     icon: const Icon(
-                      Icons.healing, // 반창고 아이콘으로 변경
+                      Icons.healing,
                       size: 20,
-                      color: Colors.green, // 초록색으로 변경
+                      color: Colors.green,
                     ),
                     label: const Text(
                       '증상 관리',
@@ -91,8 +89,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // 캘린더 카드
               Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 elevation: 4,
@@ -120,22 +116,22 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     onPageChanged: (focusedDay) {
                       _focusedDay = focusedDay;
                     },
-                    headerStyle: HeaderStyle(
+                    headerStyle: const HeaderStyle(
                       titleCentered: true,
                       formatButtonVisible: false,
-                      titleTextStyle: const TextStyle(
+                      titleTextStyle: TextStyle(
                         fontSize: 22.0,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
-                      headerPadding: const EdgeInsets.symmetric(vertical: 10.0),
+                      headerPadding: EdgeInsets.symmetric(vertical: 10.0),
                       leftChevronIcon: Icon(
                         Icons.chevron_left,
-                        color: Colors.grey[600],
+                        color: Colors.black54,
                       ),
                       rightChevronIcon: Icon(
                         Icons.chevron_right,
-                        color: Colors.grey[600],
+                        color: Colors.black54,
                       ),
                     ),
                     calendarStyle: CalendarStyle(
@@ -143,7 +139,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       weekendTextStyle: TextStyle(color: Colors.grey[600]),
                       defaultTextStyle: const TextStyle(color: Colors.black87),
                       todayDecoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
+                        color: Colors.green.withAlpha(50), // withOpacity 대신 withAlpha 사용
                         shape: BoxShape.circle,
                       ),
                       selectedDecoration: const BoxDecoration(
@@ -164,13 +160,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         if (events.isNotEmpty) {
                           final status = events.first;
                           Color markerColor = Colors.grey;
-
                           if (status == '이상 없음') {
                             markerColor = Colors.green.shade600;
                           } else if (status == '이상 있음') {
                             markerColor = Colors.red.shade600;
                           }
-
                           return Align(
                             alignment: Alignment.bottomCenter,
                             child: Container(
@@ -188,7 +182,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       },
                       dowBuilder: (context, day) {
                         final text = DateFormat.E('ko_KR').format(day);
-                        final textColor = (day.weekday == DateTime.sunday) ? Colors.red : (day.weekday == DateTime.saturday) ? Colors.blue : Colors.black87;
+                        final textColor = (day.weekday == DateTime.sunday)
+                            ? Colors.red
+                            : (day.weekday == DateTime.saturday)
+                                ? Colors.blue
+                                : Colors.black87;
                         return Center(
                           child: Text(
                             text,
@@ -203,10 +201,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // 건강 상태 기록 카드
               Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 elevation: 4,
@@ -262,25 +257,19 @@ class _DiaryScreenState extends State<DiaryScreen> {
   Widget _buildStateButton(String state, BuildContext context) {
     final isSelected = _selectedState == state;
     final bool hasAnySelection = _selectedState != null;
-
     Color startColor;
     Color endColor;
     Color textColor;
-    IconData icon;
     String emoji;
-
     if (state == '이상 없음') {
       startColor = Colors.green.shade400;
       endColor = Colors.green.shade600;
-      icon = Icons.check_circle_outline;
       emoji = '😊';
     } else {
       startColor = Colors.red.shade400;
       endColor = Colors.red.shade600;
-      icon = Icons.error_outline;
       emoji = '🤒';
     }
-
     if (isSelected) {
       textColor = Colors.white;
     } else if (hasAnySelection) {
@@ -290,7 +279,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
     } else {
       textColor = Colors.white;
     }
-
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
@@ -313,8 +301,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
             if (state == '이상 있음') {
               _showSymptomInputModal(context, '이상 있음');
             } else {
-              final diaryManager = Provider.of<DiaryManager>(context, listen: false);
-              diaryManager.saveDiaryEntry(_selectedDay, '이상 없음', []);
+              final diaryManager =
+                  Provider.of<DiaryManager>(context, listen: false);
+              final now = DateTime.now();
+              diaryManager.saveDiaryEntry(
+                _selectedDay,
+                '이상 없음',
+                [],
+                timestamp: now.toIso8601String(),
+              );
               _loadDiaryEntryForSelectedDay();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
@@ -347,6 +342,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
+  void _showSymptomInputModal(BuildContext context, String status) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext bc) {
+        return SymptomInputModal(selectedDay: _selectedDay, status: status);
+      },
+    );
+    _loadDiaryEntryForSelectedDay();
+  }
+
   Widget _buildHealthStatusDisplay(DiaryManager diaryManager) {
     final entry = diaryManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)];
     if (entry == null) return const SizedBox.shrink();
@@ -355,6 +362,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final frequentSymptoms = entry['frequentSymptoms'] as List<dynamic>?;
     final otherSymptoms = entry['otherSymptoms'] as List<dynamic>?;
     final customSymptom = entry['customSymptom'] as String?;
+    final timestamp = entry['timestamp'] as String?;
 
     return Card(
       elevation: 2,
@@ -376,8 +384,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 const SizedBox(width: 8),
                 Text(
                   '${DateFormat('MM월 d일').format(_selectedDay)} 기록',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[700]),
                 ),
+                if (timestamp != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '(${DateFormat('a h:mm', 'ko_KR').format(DateTime.parse(timestamp))})',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
               ],
             ),
             const Divider(height: 24),
@@ -394,14 +412,17 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 Wrap(
                   spacing: 8.0,
                   runSpacing: 8.0,
-                  children: frequentSymptoms.map<Widget>((symptom) => Chip(
-                    label: Text(symptom),
-                    backgroundColor: Colors.grey.shade200,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  )).toList(),
+                  children: frequentSymptoms
+                      .map<Widget>((symptom) => Chip(
+                            label: Text(symptom),
+                            backgroundColor: Colors.grey.shade200,
+                            labelStyle:
+                                const TextStyle(fontWeight: FontWeight.w500),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                          ))
+                      .toList(),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -417,14 +438,17 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 Wrap(
                   spacing: 8.0,
                   runSpacing: 8.0,
-                  children: otherSymptoms.map<Widget>((symptom) => Chip(
-                    label: Text(symptom),
-                    backgroundColor: Colors.grey.shade200,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  )).toList(),
+                  children: otherSymptoms
+                      .map<Widget>((symptom) => Chip(
+                            label: Text(symptom),
+                            backgroundColor: Colors.grey.shade200,
+                            labelStyle:
+                                const TextStyle(fontWeight: FontWeight.w500),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                          ))
+                      .toList(),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -458,171 +482,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showSymptomInputModal(BuildContext context, String status) {
-    final TextEditingController symptomController = TextEditingController();
-    List<String> selectedSymptoms = [];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext bc) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.only(
-            top: 24,
-            left: 24,
-            right: 24,
-            bottom: MediaQuery.of(bc).viewInsets.bottom + 24,
-          ),
-          child: StatefulBuilder(
-            builder: (BuildContext context, StateSetter modalSetState) {
-              final symptomManager = Provider.of<SymptomManager>(context);
-              final diaryManager = Provider.of<DiaryManager>(context, listen: false);
-
-              bool hasSelectedChip = selectedSymptoms.isNotEmpty;
-
-              String labelText = hasSelectedChip ? '자세한 증상을 입력하세요.' : '다른 증상이 있다면 입력하세요.';
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    '오늘 느낀 증상을 기록하세요.',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '자주 나타나는 증상',
-                    style: TextStyle(fontSize: 16, color: Colors.black54, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: symptomManager.frequentSymptoms.map((symptom) {
-                      final isSelected = selectedSymptoms.contains(symptom);
-                      return ChoiceChip(
-                        label: Text(symptom),
-                        selected: isSelected,
-                        selectedColor: Colors.blue.shade50,
-                        onSelected: (bool selected) {
-                          modalSetState(() {
-                            if (selected) {
-                              selectedSymptoms.add(symptom);
-                            } else {
-                              selectedSymptoms.remove(symptom);
-                            }
-                          });
-                        },
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.blue.shade800 : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                          side: BorderSide(
-                            color: isSelected ? Colors.blue.shade200 : Colors.grey.shade300,
-                          ),
-                        ),
-                        backgroundColor: isSelected ? Colors.blue.shade50 : Colors.grey.shade100,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: symptomController,
-                    decoration: InputDecoration(
-                      labelText: labelText,
-                      labelStyle: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue.shade600, width: 2.0),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onChanged: (text) {
-                      modalSetState(() {});
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      final customInput = symptomController.text.trim();
-                      bool hasSelectedChip = selectedSymptoms.isNotEmpty;
-
-                      if (hasSelectedChip) {
-                        diaryManager.saveDiaryEntry(
-                          _selectedDay,
-                          status,
-                          selectedSymptoms,
-                          customSymptom: customInput,
-                        );
-                      } else {
-                        if (customInput.isNotEmpty) {
-                          diaryManager.saveDiaryEntry(
-                            _selectedDay,
-                            status,
-                            selectedSymptoms,
-                            otherSymptoms: [customInput],
-                          );
-                        } else {
-                          diaryManager.saveDiaryEntry(
-                            _selectedDay,
-                            status,
-                            selectedSymptoms,
-                          );
-                        }
-                      }
-
-                      Navigator.pop(context);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('건강 일기가 저장되었습니다.')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade600,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
-                      elevation: 4,
-                    ),
-                    child: const Text('기록하기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }
