@@ -382,7 +382,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final sortedEntries = List.of(entries)..sort((a, b) {
       final aTimestamp = a['timestamp'] != null ? DateTime.parse(a['timestamp']) : DateTime(1);
       final bTimestamp = b['timestamp'] != null ? DateTime.parse(b['timestamp']) : DateTime(1);
-      return bTimestamp.compareTo(aTimestamp); // b와 a의 순서를 바꿔서 내림차순 정렬
+      return aTimestamp.compareTo(bTimestamp);
     });
 
 
