@@ -1,4 +1,3 @@
-// lib/screens/diary_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:solusmvp/services/diary_manager.dart';
@@ -32,7 +31,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final selectedDateString = DateFormat('yyyy-MM-dd').format(_selectedDay);
     final entries = diaryManager.diaryEntries[selectedDateString];
     setState(() {
-      // 가장 최근 기록의 상태를 불러옵니다.
       _selectedState = entries != null && entries.isNotEmpty ? entries.last['status'] : null;
     });
   }
@@ -42,7 +40,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final dayString = DateFormat('yyyy-MM-dd').format(day);
     if (diaryManager.diaryEntries.containsKey(dayString) &&
         diaryManager.diaryEntries[dayString]!.isNotEmpty) {
-      // 기록이 하나라도 있으면 이벤트를 표시합니다.
       return ['event'];
     }
     return [];
@@ -163,7 +160,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         final dayString = DateFormat('yyyy-MM-dd').format(date);
                         final entries = diaryManager.diaryEntries[dayString];
                         if (entries != null && entries.isNotEmpty) {
-                          // 가장 최근 기록의 상태를 기반으로 마커 색상을 결정
                           final latestEntry = entries.last;
                           final status = latestEntry['status'];
                           Color markerColor = Colors.grey;
@@ -382,12 +378,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final sortedEntries = List.of(entries)..sort((a, b) {
       final aTimestamp = a['timestamp'] != null ? DateTime.parse(a['timestamp']) : DateTime(1);
       final bTimestamp = b['timestamp'] != null ? DateTime.parse(b['timestamp']) : DateTime(1);
-      return aTimestamp.compareTo(bTimestamp);
+      return bTimestamp.compareTo(aTimestamp);
     });
 
-
     return Column(
-      children: entries.reversed.map((entry) { // 최근 기록부터 표시하기 위해 reversed 사용
+      children: sortedEntries.map((entry) {
         return _buildSingleHealthStatusDisplay(entry);
       }).toList(),
     );
@@ -432,6 +427,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
+                if (timestamp != null)
+                  IconButton(
+                    icon: Icon(Icons.edit, size: 18, color: Colors.grey[600]),
+                    onPressed: () {
+                      _showTimePickerForUpdate(entry);
+                    },
+                  ),
               ],
             ),
             const Divider(height: 24),
@@ -452,7 +454,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       .map<Widget>((symptom) => Chip(
                             label: Text(symptom),
                             backgroundColor: Colors.grey.shade200,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+                            labelStyle:
+                                const TextStyle(fontWeight: FontWeight.w500),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20.0),
                             ),
@@ -477,7 +480,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       .map<Widget>((symptom) => Chip(
                             label: Text(symptom),
                             backgroundColor: Colors.grey.shade200,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+                            labelStyle:
+                                const TextStyle(fontWeight: FontWeight.w500),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20.0),
                             ),
@@ -517,5 +521,42 @@ class _DiaryScreenState extends State<DiaryScreen> {
         ),
       ),
     );
+  }
+
+  void _showTimePickerForUpdate(Map<String, dynamic> entry) async {
+    final oldTimestamp = entry['timestamp'];
+    if (oldTimestamp == null) return;
+    final initialTime = TimeOfDay.fromDateTime(DateTime.parse(oldTimestamp));
+
+    final newTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (BuildContext context, Widget? child) {
+        return Localizations.override(
+          context: context,
+          locale: const Locale('ko', 'KR'),
+          child: child,
+        );
+      },
+    );
+
+    if (newTime != null) {
+      final newDateTime = DateTime(
+        _selectedDay.year,
+        _selectedDay.month,
+        _selectedDay.day,
+        newTime.hour,
+        newTime.minute,
+      );
+
+      final diaryManager = Provider.of<DiaryManager>(context, listen: false);
+      diaryManager.updateDiaryEntryTimestamp(
+        _selectedDay,
+        oldTimestamp,
+        newDateTime.toIso8601String(),
+      );
+
+      _loadDiaryEntryForSelectedDay();
+    }
   }
 }
