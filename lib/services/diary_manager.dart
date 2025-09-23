@@ -72,6 +72,18 @@ class DiaryManager with ChangeNotifier {
     _saveToPrefs();
   }
 
+  // 일기 기록을 삭제하는 새로운 메서드 추가
+  void deleteDiaryEntry(String date, String timestamp) {
+    if (_diaryEntries.containsKey(date)) {
+      _diaryEntries[date]!.removeWhere((entry) => entry['timestamp'] == timestamp);
+      if (_diaryEntries[date]!.isEmpty) {
+        _diaryEntries.remove(date);
+      }
+      _saveToPrefs();
+      notifyListeners();
+    }
+  }
+
   void updateDiaryEntryTimestamp(
       DateTime day, String oldTimestamp, String newTimestamp) {
     final dayString = DateFormat('yyyy-MM-dd').format(day);

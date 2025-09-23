@@ -402,19 +402,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
       statusEmoji = '🚨';
     }
 
-    // 동글동글한 디자인의 Container로 변경
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(25.0), // 둥근 모서리
+        borderRadius: BorderRadius.circular(25.0),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: const Offset(0, 3), // 그림자 효과
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -442,14 +441,26 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     ),
                 ],
               ),
-              if (timestamp != null)
-                IconButton(
-                  icon: Icon(Icons.edit, size: 20, color: Colors.grey[500]),
-                  onPressed: () {
-                    _showTimePickerForUpdate(entry);
-                  },
-                  tooltip: '시간 변경',
-                ),
+              Row(
+                children: [
+                  if (timestamp != null)
+                    IconButton(
+                      icon: Icon(Icons.edit, size: 20, color: Colors.grey[500]),
+                      onPressed: () {
+                        _showTimePickerForUpdate(entry);
+                      },
+                      tooltip: '시간 변경',
+                    ),
+                  // 삭제 버튼 추가
+                  IconButton(
+                    icon: Icon(Icons.delete, size: 20, color: Colors.grey[500]),
+                    onPressed: () {
+                      _confirmAndDeleteEntry(entry);
+                    },
+                    tooltip: '기록 삭제',
+                  ),
+                ],
+              ),
             ],
           ),
           const Divider(height: 24),
@@ -471,8 +482,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     .map<Widget>((symptom) => Chip(
                           label: Text(symptom),
                           backgroundColor: Colors.grey.shade200,
-                          labelStyle:
-                              const TextStyle(fontWeight: FontWeight.w500),
+                          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20.0),
                           ),
@@ -498,8 +508,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     .map<Widget>((symptom) => Chip(
                           label: Text(symptom),
                           backgroundColor: Colors.grey.shade200,
-                          labelStyle:
-                              const TextStyle(fontWeight: FontWeight.w500),
+                          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20.0),
                           ),
@@ -539,6 +548,47 @@ class _DiaryScreenState extends State<DiaryScreen> {
         ],
       ),
     );
+  }
+
+  void _confirmAndDeleteEntry(Map<String, dynamic> entry) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('기록 삭제'),
+          content: const Text('기록을 삭제하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('취소', style: TextStyle(color: Colors.grey)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('삭제', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                _deleteEntry(entry);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteEntry(Map<String, dynamic> entry) {
+    final diaryManager = Provider.of<DiaryManager>(context, listen: false);
+    final dateString = DateFormat('yyyy-MM-dd').format(_selectedDay);
+    final timestamp = entry['timestamp'];
+
+    if (timestamp != null) {
+      diaryManager.deleteDiaryEntry(dateString, timestamp);
+      _loadDiaryEntryForSelectedDay();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('기록이 삭제되었습니다.')),
+      );
+    }
   }
 
   void _showTimePickerForUpdate(Map<String, dynamic> entry) async {
