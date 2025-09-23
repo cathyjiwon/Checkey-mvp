@@ -30,18 +30,20 @@ class _DiaryScreenState extends State<DiaryScreen> {
   void _loadDiaryEntryForSelectedDay() {
     final diaryManager = Provider.of<DiaryManager>(context, listen: false);
     final selectedDateString = DateFormat('yyyy-MM-dd').format(_selectedDay);
-    final entry = diaryManager.diaryEntries[selectedDateString];
+    final entries = diaryManager.diaryEntries[selectedDateString];
     setState(() {
-      _selectedState = entry?['status'];
+      // 가장 최근 기록의 상태를 불러옵니다.
+      _selectedState = entries != null && entries.isNotEmpty ? entries.last['status'] : null;
     });
   }
 
   List<String> _getEventsForDay(DateTime day) {
     final diaryManager = Provider.of<DiaryManager>(context, listen: false);
     final dayString = DateFormat('yyyy-MM-dd').format(day);
-    if (diaryManager.diaryEntries.containsKey(dayString)) {
-      final status = diaryManager.diaryEntries[dayString]?['status'];
-      return status != null ? [status] : [];
+    if (diaryManager.diaryEntries.containsKey(dayString) &&
+        diaryManager.diaryEntries[dayString]!.isNotEmpty) {
+      // 기록이 하나라도 있으면 이벤트를 표시합니다.
+      return ['event'];
     }
     return [];
   }
@@ -139,7 +141,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       weekendTextStyle: TextStyle(color: Colors.grey[600]),
                       defaultTextStyle: const TextStyle(color: Colors.black87),
                       todayDecoration: BoxDecoration(
-                        color: Colors.green.withAlpha(50), // withOpacity 대신 withAlpha 사용
+                        color: Colors.green.withAlpha(50),
                         shape: BoxShape.circle,
                       ),
                       selectedDecoration: const BoxDecoration(
@@ -157,8 +159,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     eventLoader: (day) => _getEventsForDay(day),
                     calendarBuilders: CalendarBuilders(
                       markerBuilder: (context, date, events) {
-                        if (events.isNotEmpty) {
-                          final status = events.first;
+                        final diaryManager = Provider.of<DiaryManager>(context, listen: false);
+                        final dayString = DateFormat('yyyy-MM-dd').format(date);
+                        final entries = diaryManager.diaryEntries[dayString];
+                        if (entries != null && entries.isNotEmpty) {
+                          // 가장 최근 기록의 상태를 기반으로 마커 색상을 결정
+                          final latestEntry = entries.last;
+                          final status = latestEntry['status'];
                           Color markerColor = Colors.grey;
                           if (status == '이상 없음') {
                             markerColor = Colors.green.shade600;
@@ -241,8 +248,21 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      if (_selectedState != null)
-                        _buildHealthStatusDisplay(diaryManager),
+                      if (diaryManager.diaryEntries.containsKey(DateFormat('yyyy-MM-dd').format(_selectedDay)))
+                        _buildAllHealthStatusDisplays(diaryManager),
+                      if (!diaryManager.diaryEntries.containsKey(DateFormat('yyyy-MM-dd').format(_selectedDay)))
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Text(
+                              '아직 기록된 건강 일기가 없습니다.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -301,8 +321,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
             if (state == '이상 있음') {
               _showSymptomInputModal(context, '이상 있음');
             } else {
-              final diaryManager =
-                  Provider.of<DiaryManager>(context, listen: false);
+              final diaryManager = Provider.of<DiaryManager>(context, listen: false);
               final now = DateTime.now();
               diaryManager.saveDiaryEntry(
                 _selectedDay,
@@ -354,10 +373,20 @@ class _DiaryScreenState extends State<DiaryScreen> {
     _loadDiaryEntryForSelectedDay();
   }
 
-  Widget _buildHealthStatusDisplay(DiaryManager diaryManager) {
-    final entry = diaryManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)];
-    if (entry == null) return const SizedBox.shrink();
+  Widget _buildAllHealthStatusDisplays(DiaryManager diaryManager) {
+    final entries = diaryManager.diaryEntries[DateFormat('yyyy-MM-dd').format(_selectedDay)];
+    if (entries == null || entries.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
+    return Column(
+      children: entries.reversed.map((entry) { // 최근 기록부터 표시하기 위해 reversed 사용
+        return _buildSingleHealthStatusDisplay(entry);
+      }).toList(),
+    );
+  }
+
+  Widget _buildSingleHealthStatusDisplay(Map<String, dynamic> entry) {
     final status = entry['status'];
     final frequentSymptoms = entry['frequentSymptoms'] as List<dynamic>?;
     final otherSymptoms = entry['otherSymptoms'] as List<dynamic>?;
@@ -416,8 +445,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       .map<Widget>((symptom) => Chip(
                             label: Text(symptom),
                             backgroundColor: Colors.grey.shade200,
-                            labelStyle:
-                                const TextStyle(fontWeight: FontWeight.w500),
+                            labelStyle: const TextStyle(fontWeight: FontWeight.w500),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20.0),
                             ),
@@ -442,8 +470,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       .map<Widget>((symptom) => Chip(
                             label: Text(symptom),
                             backgroundColor: Colors.grey.shade200,
-                            labelStyle:
-                                const TextStyle(fontWeight: FontWeight.w500),
+                            labelStyle: const TextStyle(fontWeight: FontWeight.w500),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20.0),
                             ),
