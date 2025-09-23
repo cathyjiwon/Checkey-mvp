@@ -66,7 +66,7 @@ class FrequentSymptomDrawer extends StatelessWidget {
           title: Text(title),
           content: TextField(
             controller: controller,
-            decoration: InputDecoration(hintText: "$title을 입력하세요"),
+            decoration: InputDecoration(hintText: "추가할 증상을 입력하세요."),
           ),
           actions: [
             TextButton(
