@@ -379,6 +379,13 @@ class _DiaryScreenState extends State<DiaryScreen> {
       return const SizedBox.shrink();
     }
 
+    final sortedEntries = List.of(entries)..sort((a, b) {
+      final aTimestamp = a['timestamp'] != null ? DateTime.parse(a['timestamp']) : DateTime(1);
+      final bTimestamp = b['timestamp'] != null ? DateTime.parse(b['timestamp']) : DateTime(1);
+      return bTimestamp.compareTo(aTimestamp); // b와 a의 순서를 바꿔서 내림차순 정렬
+    });
+
+
     return Column(
       children: entries.reversed.map((entry) { // 최근 기록부터 표시하기 위해 reversed 사용
         return _buildSingleHealthStatusDisplay(entry);
