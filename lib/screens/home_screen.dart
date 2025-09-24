@@ -49,18 +49,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            // "솔루션" 미리보기 카드
-            CustomCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('솔루션', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text('기록을 기반으로 맞춤형 건강 솔루션을 확인하세요.'),
-                ],
-              ),
-            ),
+            // 기존의 "솔루션" 미리보기 카드 제거
           ],
         ),
       ),

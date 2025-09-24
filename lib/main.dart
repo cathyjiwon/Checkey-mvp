@@ -4,15 +4,14 @@ import 'package:solusmvp/services/symptom_manager.dart';
 import 'package:solusmvp/screens/diary_screen.dart';
 import 'package:solusmvp/screens/home_screen.dart';
 import 'package:solusmvp/screens/statistics_screen.dart';
-import 'package:solusmvp/screens/solution_screen.dart';
+// SolutionScreen import 제거
 import 'package:solusmvp/screens/medication_screen.dart';
 import 'package:solusmvp/widgets/frequent_symptom_drawer.dart';
 import 'package:solusmvp/widgets/medication_manager_drawer.dart';
 import 'package:solusmvp/services/diary_manager.dart';
 import 'package:solusmvp/services/medication_manager.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'; // 이 줄을 추가
-
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +34,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Solus MVP',
+      // 'Solus MVP'를 'Checkey'로 변경
+      title: 'Checkey',
       theme: ThemeData(
         primarySwatch: Colors.green,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -54,8 +54,8 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('ko', 'KR'), // 한국어 지원
-        Locale('en', 'US'), // 기본 영어 지원
+        Locale('ko', 'KR'),
+        Locale('en', 'US'),
       ],
       home: const MainScreen(),
     );
@@ -77,7 +77,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     MedicationScreen(),
     DiaryScreen(),
     StatisticsScreen(),
-    SolutionScreen(),
   ];
 
   @override
@@ -96,7 +95,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Solus MVP'),
+        // 'Solus MVP'를 'Checkey'로 변경
+        title: const Text('Checkey'),
       ),
       endDrawer: Drawer(
         child: ListView(
@@ -150,15 +150,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 Navigator.pop(context);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.lightbulb),
-              title: const Text('솔루션'),
-              selected: _tabController.index == 4,
-              onTap: () {
-                _tabController.animateTo(4);
-                Navigator.pop(context);
-              },
-            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.medication),
@@ -208,10 +199,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
             label: '통계',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.lightbulb),
-            label: '솔루션',
           ),
         ],
         currentIndex: _tabController.index,
