@@ -18,8 +18,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     final diaryManager = Provider.of<DiaryManager>(context);
 
-    // 현재 월의 '이상 있음' 기록 데이터 추출
-    Map<int, int> hasSymptomData = _getMonthlySymptomData(diaryManager, _focusedMonth);
+    // 현재 월의 '이상 있음' 기록 빈도 데이터 추출
+    Map<int, int> dailySymptomCount = _getDailySymptomCount(diaryManager, _focusedMonth);
+    Map<int, List<DateTime>> dailySymptomTimestamps = _getDailySymptomTimestamps(diaryManager, _focusedMonth);
 
     // 증상별 빈도 및 발생 날짜/시간 정보 계산
     Map<String, List<DateTime>> symptomOccurrences = _getSymptomOccurrences(diaryManager);
@@ -27,9 +28,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // X축(날짜)과 Y축(빈도) 값 생성
     List<FlSpot> spots = [];
     int maxDay = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
+    int maxSymptomCount = 0;
 
     for (int i = 1; i <= maxDay; i++) {
-      spots.add(FlSpot(i.toDouble(), hasSymptomData[i]?.toDouble() ?? 0));
+      int count = dailySymptomCount[i] ?? 0;
+      spots.add(FlSpot(i.toDouble(), count.toDouble()));
+      if (count > maxSymptomCount) {
+        maxSymptomCount = count;
+      }
     }
 
     return Scaffold(
@@ -67,7 +73,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             minX: 1,
                             maxX: maxDay.toDouble(),
                             minY: 0,
-                            maxY: 1.2,
+                            maxY: maxSymptomCount.toDouble() + 1,
+                            lineTouchData: LineTouchData(
+                              touchTooltipData: LineTouchTooltipData(
+                                getTooltipItems: (List<FlSpot> touchedSpots) {
+                                  return touchedSpots.map((FlSpot touchedSpot) {
+                                    final day = touchedSpot.x.toInt();
+                                    final count = touchedSpot.y.toInt();
+                                    final timestamps = dailySymptomTimestamps[day] ?? [];
+                                    
+                                    if (count == 0) {
+                                      return null;
+                                    }
+
+                                    final dateString = DateFormat('yyyy.MM.dd').format(DateTime(_focusedMonth.year, _focusedMonth.month, day));
+                                    final timeStrings = timestamps.map((ts) => DateFormat('a h:mm', 'ko_KR').format(ts)).join('\n');
+                                    
+                                    return LineTooltipItem(
+                                      '$dateString\n$timeStrings',
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    );
+                                  }).toList();
+                                },
+                                
+                              ),
+                              handleBuiltInTouches: true,
+                            ),
                             titlesData: FlTitlesData(
                               show: true,
                               bottomTitles: AxisTitles(
@@ -95,10 +130,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               leftTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
+                                  interval: 1, // ✨ 추가된 부분
                                   getTitlesWidget: (value, meta) {
-                                    if (value == 0) return const Text('정상');
-                                    if (value == 1) return const Text('이상');
-                                    return const Text('');
+                                    if (value == 0) return const Text('0회');
+                                    return Text('${value.toInt()}회');
                                   },
                                   reservedSize: 40,
                                 ),
@@ -126,14 +161,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             lineBarsData: [
                               LineChartBarData(
                                 spots: spots,
-                                isCurved: false, // 꺾은선으로 표현
+                                isCurved: false,
                                 color: Colors.red.shade400,
                                 barWidth: 2,
                                 isStrokeCapRound: true,
                                 dotData: FlDotData(
                                   show: true,
                                   getDotPainter: (spot, percent, barData, index) {
-                                    if (spot.y == 1) {
+                                    if (spot.y > 0) {
                                       return FlDotCirclePainter(
                                         radius: 4,
                                         color: Colors.red.shade600,
@@ -197,34 +232,45 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  // 월별 '이상 있음' 기록 데이터 집계 함수
-  Map<int, int> _getMonthlySymptomData(DiaryManager diaryManager, DateTime month) {
+  Map<int, int> _getDailySymptomCount(DiaryManager diaryManager, DateTime month) {
     Map<int, int> dailySymptomCount = {};
     
-    int maxDay = DateTime(month.year, month.month + 1, 0).day;
-    for (int i = 1; i <= maxDay; i++) {
-      dailySymptomCount[i] = 0;
-    }
-
     diaryManager.diaryEntries.forEach((dateString, entries) {
       DateTime date = DateTime.parse(dateString);
       if (date.year == month.year && date.month == month.month) {
-        bool hasSymptom = entries.any((entry) => entry['status'] == '이상 있음');
-        if (hasSymptom) {
-          dailySymptomCount[date.day] = 1;
+        int count = entries.where((entry) => entry['status'] == '이상 있음').length;
+        if (count > 0) {
+          dailySymptomCount[date.day] = count;
         }
       }
     });
     return dailySymptomCount;
   }
+
+  Map<int, List<DateTime>> _getDailySymptomTimestamps(DiaryManager diaryManager, DateTime month) {
+    Map<int, List<DateTime>> timestamps = {};
+    diaryManager.diaryEntries.forEach((dateString, entries) {
+      DateTime date = DateTime.parse(dateString);
+      if (date.year == month.year && date.month == month.month) {
+        List<DateTime> dailyTimestamps = [];
+        for (var entry in entries) {
+          if (entry['status'] == '이상 있음' && entry.containsKey('timestamp')) {
+            dailyTimestamps.add(DateTime.parse(entry['timestamp']));
+          }
+        }
+        if (dailyTimestamps.isNotEmpty) {
+          timestamps[date.day] = dailyTimestamps;
+        }
+      }
+    });
+    return timestamps;
+  }
   
-  // 증상별 발생 날짜/시간 계산 함수
   Map<String, List<DateTime>> _getSymptomOccurrences(DiaryManager diaryManager) {
     Map<String, List<DateTime>> occurrences = {};
     diaryManager.diaryEntries.forEach((dateString, entries) {
       for (var entry in entries) {
         if (entry['status'] == '이상 있음') {
-          // 증상 리스트 통합
           List<String> allSymptoms = [];
           if (entry.containsKey('frequentSymptoms') && entry['frequentSymptoms'] != null) {
             allSymptoms.addAll(List<String>.from(entry['frequentSymptoms']));
@@ -236,7 +282,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             allSymptoms.add(entry['customSymptom']);
           }
 
-          // 각 증상별로 발생 날짜/시간 기록
           DateTime? timestamp = entry.containsKey('timestamp') ? DateTime.tryParse(entry['timestamp']) : null;
           if (timestamp != null) {
             for (String symptom in allSymptoms) {
@@ -252,13 +297,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return occurrences;
   }
 
-  // 증상별 빈도 및 날짜/시간 표 위젯
   Widget _buildSymptomFrequencyTable(Map<String, List<DateTime>> occurrences) {
     if (occurrences.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 빈도가 높은 순으로 정렬
     final sortedSymptoms = occurrences.entries.toList()
       ..sort((a, b) => b.value.length.compareTo(a.value.length));
 
@@ -317,7 +360,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       DataCell(Text('${entry.value.length}회')),
                       DataCell(
                         SizedBox(
-                          width: 150, // 열의 너비 지정
+                          width: 150,
                           child: Text(
                             dates,
                             style: const TextStyle(fontSize: 12),
