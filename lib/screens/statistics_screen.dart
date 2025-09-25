@@ -21,6 +21,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // 현재 월의 '이상 있음' 기록 데이터 추출
     Map<int, int> hasSymptomData = _getMonthlySymptomData(diaryManager, _focusedMonth);
 
+    // 증상별 빈도 및 발생 날짜/시간 정보 계산
+    Map<String, List<DateTime>> symptomOccurrences = _getSymptomOccurrences(diaryManager);
+
     // X축(날짜)과 Y축(빈도) 값 생성
     List<FlSpot> spots = [];
     int maxDay = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
@@ -156,6 +159,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+              // 증상별 빈도 및 날짜/시간 표
+              _buildSymptomFrequencyTable(symptomOccurrences),
             ],
           ),
         ),
@@ -195,7 +201,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Map<int, int> _getMonthlySymptomData(DiaryManager diaryManager, DateTime month) {
     Map<int, int> dailySymptomCount = {};
     
-    // 해당 월의 모든 날짜에 대해 초기화
     int maxDay = DateTime(month.year, month.month + 1, 0).day;
     for (int i = 1; i <= maxDay; i++) {
       dailySymptomCount[i] = 0;
@@ -204,14 +209,129 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     diaryManager.diaryEntries.forEach((dateString, entries) {
       DateTime date = DateTime.parse(dateString);
       if (date.year == month.year && date.month == month.month) {
-        // 해당 날짜에 '이상 있음' 기록이 하나라도 있으면 1로 설정
         bool hasSymptom = entries.any((entry) => entry['status'] == '이상 있음');
         if (hasSymptom) {
           dailySymptomCount[date.day] = 1;
         }
       }
     });
-
     return dailySymptomCount;
+  }
+  
+  // 증상별 발생 날짜/시간 계산 함수
+  Map<String, List<DateTime>> _getSymptomOccurrences(DiaryManager diaryManager) {
+    Map<String, List<DateTime>> occurrences = {};
+    diaryManager.diaryEntries.forEach((dateString, entries) {
+      for (var entry in entries) {
+        if (entry['status'] == '이상 있음') {
+          // 증상 리스트 통합
+          List<String> allSymptoms = [];
+          if (entry.containsKey('frequentSymptoms') && entry['frequentSymptoms'] != null) {
+            allSymptoms.addAll(List<String>.from(entry['frequentSymptoms']));
+          }
+          if (entry.containsKey('otherSymptoms') && entry['otherSymptoms'] != null) {
+            allSymptoms.addAll(List<String>.from(entry['otherSymptoms']));
+          }
+          if (entry.containsKey('customSymptom') && entry['customSymptom'] != null && entry['customSymptom'].isNotEmpty) {
+            allSymptoms.add(entry['customSymptom']);
+          }
+
+          // 각 증상별로 발생 날짜/시간 기록
+          DateTime? timestamp = entry.containsKey('timestamp') ? DateTime.tryParse(entry['timestamp']) : null;
+          if (timestamp != null) {
+            for (String symptom in allSymptoms) {
+              if (!occurrences.containsKey(symptom)) {
+                occurrences[symptom] = [];
+              }
+              occurrences[symptom]!.add(timestamp);
+            }
+          }
+        }
+      }
+    });
+    return occurrences;
+  }
+
+  // 증상별 빈도 및 날짜/시간 표 위젯
+  Widget _buildSymptomFrequencyTable(Map<String, List<DateTime>> occurrences) {
+    if (occurrences.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // 빈도가 높은 순으로 정렬
+    final sortedSymptoms = occurrences.entries.toList()
+      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              '증상별 빈도 및 발생 시점',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columnSpacing: 16,
+                columns: const [
+                  DataColumn(
+                    label: Text(
+                      '증상',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      '횟수',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    numeric: true,
+                  ),
+                  DataColumn(
+                    label: Text(
+                      '발생 시점',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+                rows: sortedSymptoms.map((entry) {
+                  final dates = entry.value.map((dt) {
+                    return DateFormat('yyyy.MM.dd HH:mm').format(dt);
+                  }).join('\n');
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(entry.key)),
+                      DataCell(Text('${entry.value.length}회')),
+                      DataCell(
+                        SizedBox(
+                          width: 150, // 열의 너비 지정
+                          child: Text(
+                            dates,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
